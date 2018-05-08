@@ -1,45 +1,62 @@
 #/bin/sh
 
-init(){
-# tell which etc
-/bin/touch /tmp/media/nand/etc/nandetc
-# /etc not mounted
-/usr/bin/[ ! -e /etc/nandetc ] && {
-# mount /etc
+dir=/root/netatalk
+cronf=/var/spool/cron/crontabs/admin
+
+createPri(){
+echo "creating passwd and shdow and group"
+# modify /etc/passwd
+/bin/cat <<EOM >/etc/passwd
+admin:x:0:0:Administrator:/root:/bin/sh
+root:x:0:0:root:/root:/bin/sh
+support:x:0:0:Technical Support:/:/bin/false
+user:*:101:101:Normal User:/:/bin/false
+tmuser:x:1000:1001:user for timemachine:/:/bin/false
+nobody:*:65534:65534:nobody:/:/bin/false
+EOM
+# modify /etc/shadow
+/bin/cat <<EOM >/etc/shadow
+admin:$1$2etwQ.0k$clahXj54YnqHClpg84r0W1:17659:0:99999:7:::
+root:*:0:0:99999:7:::
+support:*:0:0:99999:7:::
+user:*:0:0:99999:7:::
+tmuser:$1$rcgsFiYh$B4IIfLPVeDEELKmkOzeR..:17659:0:99999:7:::
+nobody:*:0:0:99999:7:::
+EOM
+# modify /etc/group
+/bin/cat <<EOM >/etc/group
+root::0:root,admin,support
+users:x:100:
+nogroup:x:65534:
+timemachine:x:1000:tmuser
+EOM
+}
+mountEtc(){
+echo "mounting etc"
 /bin/rm -rf /tmp/media/nand/etc2
 /bin/cp /etc /tmp/media/nand/etc2 -r
 /bin/rm -f /tmp/media/nand/etc2/crontabs
 /bin/rm -f /tmp/media/nand/etc2/dropbear
+/bin/rm -f /tmp/media/nand/etc2/passwd
+/bin/rm -f /tmp/media/nand/etc2/group
 /bin/cp /tmp/media/nand/etc/* /tmp/media/nand/etc2/ -r
 /bin/rm -rf /tmp/media/nand/etc
 /bin/mv /tmp/media/nand/etc2 /tmp/media/nand/etc
 /bin/mount --bind /tmp/media/nand/etc /etc
 }
-# shadow exists
-/usr/bin/[ -e /etc/shadow ] && {
-    /bin/echo "begining to reintialize /etc/passwd and /etc/group and /etc/shadow!"
+
+init(){
+echo "start initializing"
+# tell which etc
+/bin/touch /tmp/media/nand/etc/nandetc
+# /etc not mounted
+/usr/bin/[ ! -e /etc/nandetc ] && {
+mountEtc
 }
-/bin/echo "echo \"Please use \\\"echo 'admin:passwd'|chpasswd\\\" instead!\"" > /tmp/media/nand/netatalk/passwd
-/bin/mount --bind /tmp/media/nand/netatalk/passwd /usr/bin/passwd
-# modify /etc/passwd
-/bin/echo "admin:x:0:0:Administrator:/root:/bin/sh" > /etc/passwd
-/bin/echo "root:x:0:0:root:/root:/bin/sh" >> /etc/passwd
-/bin/echo "support:x:0:0:Technical Support:/:/bin/false" >> /etc/passwd
-/bin/echo "user:*:101:101:Normal User:/:/bin/false" >> /etc/passwd
-/bin/echo "tmuser:x:1000:1001:user for timemachine:/:/bin/false" >> /etc/passwd
-/bin/echo "nobody:*:65534:65534:nobody:/:/bin/false" >> /etc/passwd
-# modify /etc/shadow
-/bin/echo "admin:$1$MRBDY0Tt$wR4WrrZnlMmS6z3syhHAy1:17659:0:99999:7:::" > /etc/shadow # admin
-/bin/echo "root:*:0:0:99999:7:::" >> /etc/shadow
-/bin/echo "support:*:0:0:99999:7:::" >> /etc/shadow
-/bin/echo "user:*:0:0:99999:7:::" >> /etc/shadow
-/bin/echo "tmuser:$1$MRBDY0Tt$wR4WrrZnlMmS6z3syhHAy1:17659:0:99999:7:::" >> /etc/shadow # admin
-/bin/echo "nobody:*:0:0:99999:7:::" >> /etc/shadow
-# modify /etc/group
-/bin/echo "root::0:root,admin,support" > /etc/group
-/bin/echo "users:x:100:" >> /etc/group
-/bin/echo "nogroup:x:65534:" >> /etc/group
-/bin/echo "timemachine:x:1000:tmuser" >> /etc/group
+# shadow not exists
+/usr/bin/[ ! -e /etc/shadow ] && {
+createPri
+}
 #install netatalk and avahi-utils
 opkg update && opkg install netatalk avahi-utils
 # write afp.conf
@@ -90,16 +107,20 @@ EOM
 /etc/init.d/*cnid_metad restart
 /etc/init.d/*avahi-daemon restart
 /etc/init.d/*afpd restart
+/usr/bin/[ -z "$(grep netatalk_start /opt/started_script.sh)" ] /bin/echo "$dir/start.sh start >/dev/null 2>&1 # netatalk_start" >> /opt/started_script.sh
+/usr/bin/[ -z "$(grep netatalk_check $cronf)" ] /bin/echo "*/30 * * * * $dir/start.sh check >/dev/null 2>&1 # netatalk_check" >> $cronf #30minutes check once
 }
 
 start(){
-# disable passwd
-/bin/echo "echo \"Please use \\\"echo 'admin:passwd'|chpasswd\\\" instead!\"" > /tmp/media/nand/netatalk/passwd
-/bin/mount --bind /tmp/media/nand/netatalk/passwd /usr/bin/passwd
 # if mounted /etc
 /usr/bin/[ ! -e /etc/nandetc ] && /bin/mount --bind /tmp/media/nand/etc /etc
+# if still dont have nandetc
+/usr/bin/[ ! -e /etc/nandetc ] && {
+    /bin/echo "initializing before start!"
+    init
+}
 # wait for usb to mount
-sleep 10
+sleep 30
 /etc/init.d/*dbus restart
 /etc/init.d/*cnid_metad restart
 /etc/init.d/*avahi-daemon restart
@@ -107,8 +128,13 @@ sleep 10
 }
 
 check(){
-# if mounted /etc
+# if not mounted /etc
 /usr/bin/[ ! -e /etc/nandetc ] && /bin/mount --bind /tmp/media/nand/etc /etc
+# if still dont have nandetc
+/usr/bin/[ ! -e /etc/nandetc ] && {
+    /bin/echo "please init before check!"
+    init
+}
 # empty cnid_metad
 /usr/bin/[ -z "$(ps | grep cnid_metad | grep -v grep)" ] && /etc/init.d/*cnid_metad restart
 # empty dbus-daemon 
@@ -126,27 +152,33 @@ stop(){
 /etc/init.d/*afpd stop
 }
 
+# if installed opkg
+/usr/bin/[ ! -e /opt/bin/opkg ] && {
+    /bin/echo "install entware first!"
+    exit
+}
+
 case "$1" in
   start)
-    start >/dev/null 2>&1
+    start
     echo "started"
   ;;
   stop)
-    stop >/dev/null 2>&1
+    stop
     echo "stoped"
   ;;
   re|restart)
-    stop >/dev/null 2>&1
+    stop
     echo "stoped"
-    start >/dev/null 2>&1
+    start
     echo "started"
   ;;
   init)
-    init >/dev/null 2>&1
+    init
     echo "inited"
   ;;
   check)
-    check >/dev/null 2>&1
+    check
     echo "checked"
   ;;
 esac
