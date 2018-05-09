@@ -107,7 +107,7 @@ init(){
   # mount backup destination
   mountDest
   # write localhost to /etc/hosts
-  /usr/bin/[ -z "$(grep localhost /etc/hosts)" ] /bin/echo "127.0.0.1 localhost" >> /etc/hosts
+  /usr/bin/[ -z "$(grep localhost /etc/hosts)" ] && /bin/echo "127.0.0.1 localhost" >> /etc/hosts
   # shadow not exists
   /usr/bin/[ ! -e /etc/shadow ] && {
     createPri
@@ -163,8 +163,8 @@ EOM
   /etc/init.d/*cnid_metad restart
   /etc/init.d/*avahi-daemon restart
   /etc/init.d/*afpd restart
-  /usr/bin/[ -z "$(grep netatalk_start /opt/started_script.sh)" ] /bin/echo "$dir/start.sh start >/dev/null 2>&1 # netatalk_start" >> /opt/started_script.sh
-  /usr/bin/[ -z "$(grep netatalk_check $cronf)" ] /bin/echo "*/30 * * * * $dir/start.sh check >/dev/null 2>&1 # netatalk_check" >> $cronf #30minutes check once
+  /usr/bin/[ -z "$(grep netatalk_start /opt/started_script.sh)" ] && /bin/echo "$dir/start.sh start >/dev/null 2>&1 # netatalk_start" >> /opt/started_script.sh
+  /usr/bin/[ -z "$(grep netatalk_check $cronf)" ] && /bin/echo "*/30 * * * * $dir/start.sh check >/dev/null 2>&1 # netatalk_check" >> $cronf #30minutes check once
 }
 
 start(){
@@ -175,9 +175,9 @@ start(){
       /bin/echo "initializing before start!"
       init
   }
-  /usr/bin/[ -z "$(grep netatalk_start /opt/started_script.sh)" ] /bin/echo "$dir/start.sh start >/dev/null 2>&1 # netatalk_start" >> /opt/started_script.sh
-  /usr/bin/[ -z "$(grep netatalk_check $cronf)" ] /bin/echo "*/30 * * * * $dir/start.sh check >/dev/null 2>&1 # netatalk_check" >> $cronf #30minutes check once
-  /usr/bin/[ -z "$(grep localhost /etc/hosts)" ] /bin/echo "127.0.0.1 localhost" >> /etc/hosts #30minutes check once
+  /usr/bin/[ -z "$(grep netatalk_start /opt/started_script.sh)" ] && /bin/echo "$dir/start.sh start >/dev/null 2>&1 # netatalk_start" >> /opt/started_script.sh
+  /usr/bin/[ -z "$(grep netatalk_check $cronf)" ] && /bin/echo "*/30 * * * * $dir/start.sh check >/dev/null 2>&1 # netatalk_check" >> $cronf #30minutes check once
+  /usr/bin/[ -z "$(grep localhost /etc/hosts)" ] && /bin/echo "127.0.0.1 localhost" >> /etc/hosts 
   # wait for usb to mount
   sleep 30
   # if no usb disk
@@ -218,9 +218,9 @@ check(){
   }
   # tell which tm1
   /usr/bin/[ ! -e /tmp/media/nand/backups/tm1/.sda ] && /bin/mount --bind ${device}/backups/tm1 /tmp/media/nand/backups/tm1
-  /usr/bin/[ -z "$(grep netatalk_start /opt/started_script.sh)" ] /bin/echo "$dir/start.sh start >/dev/null 2>&1 # netatalk_start" >> /opt/started_script.sh
-  /usr/bin/[ -z "$(grep netatalk_check $cronf)" ] /bin/echo "*/30 * * * * $dir/start.sh check >/dev/null 2>&1 # netatalk_check" >> $cronf #30minutes check once
-  /usr/bin/[ -z "$(grep localhost /etc/hosts)" ] /bin/echo "127.0.0.1 localhost" >> /etc/hosts
+  /usr/bin/[ -z "$(grep netatalk_start /opt/started_script.sh)" ] && /bin/echo "$dir/start.sh start >/dev/null 2>&1 # netatalk_start" >> /opt/started_script.sh
+  /usr/bin/[ -z "$(grep netatalk_check $cronf)" ] && /bin/echo "*/30 * * * * $dir/start.sh check >/dev/null 2>&1 # netatalk_check" >> $cronf #30minutes check once
+  /usr/bin/[ -z "$(grep localhost /etc/hosts)" ] && /bin/echo "127.0.0.1 localhost" >> /etc/hosts
   # empty cnid_metad
   /usr/bin/[ -z "$(ps | grep cnid_metad | grep -v grep)" ] && /etc/init.d/*cnid_metad restart
   # empty dbus-daemon 
