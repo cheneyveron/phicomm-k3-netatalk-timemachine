@@ -10,11 +10,15 @@ device=/tmp/share/sda2
 tmuser=tmuser
 # Time Machine 用户组
 tmgroup=timemachine
-# SSH admin账号密码，不影响网页；网页也不能再修改ssh密码
+# SSH admin账号密码
+# 此后SSH密码与网页隔离，互不影响
+# 修改密码请使用chpasswd，方法：
+# echo "admin:password"|chpasswd
+# !!!请勿使用passwd修改密码,会导致SSH登录不上!!!
 adminpass=admin
 # Time Machine 用户的密码
 tmuserpass=tmuser
-# Time Machine 容量（单位GB，与硬盘容量无关）
+# Time Machine 容量（单位GB，最大容量，与实际硬盘容量无关）
 tmcap=250
 
 createPri(){
@@ -71,7 +75,7 @@ mountNetatalk(){
     umount -l /opt/var/netatalk
     /bin/rm -rf ${device}/opt/var/netatalk
     /bin/mkdir -p ${device}/opt/var
-    /bin/cp /opt/var/netatalk ${device}/opt/var/netatalk -r
+    /bin/cp /opt/var/netatalk/* ${device}/opt/var/netatalk -r
     /bin/touch ${device}/opt/var/netatalk/.sda
     /bin/mount --bind ${device}/opt/var/netatalk /opt/var/netatalk
   }
