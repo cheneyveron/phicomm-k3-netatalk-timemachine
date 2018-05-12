@@ -32,7 +32,7 @@ root:x:0:0:root:/root:/bin/sh
 support:x:0:0:Technical Support:/:/bin/false
 user:*:101:101:Normal User:/:/bin/false
 ${tmuser}:x:1000:1001:user for ${tmgroup}:/:/bin/false
-nobody:*:0:0:nobody:/:/bin/false
+nobody:*:65534:65534:nobody:/:/bin/false
 EOM
 # modify /etc/shadow
 /bin/cat <<EOM >/etc/shadow
