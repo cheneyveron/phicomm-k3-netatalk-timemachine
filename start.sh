@@ -78,6 +78,9 @@ mountNetatalk(){
     /bin/cp /opt/var/netatalk/* ${device}/opt/var/netatalk -r
     /bin/touch ${device}/opt/var/netatalk/.sda
     /bin/mount --bind ${device}/opt/var/netatalk /opt/var/netatalk
+    /bin/mkdir -p /opt/var/netatalk/CNID/TimeMachine
+    chown -R ${tmuser}:${tmgroup} /opt/var/netatalk/CNID/TimeMachine
+    chmod -R 777 /opt/var/netatalk/CNID/TimeMachine
   }
 }
 mountDest(){
